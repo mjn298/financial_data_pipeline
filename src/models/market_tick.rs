@@ -77,7 +77,7 @@ mod tests {
         let sig_tick = MarketTick::new(String::from("AMZN"), Decimal::new(1000, 2), 1001);
         assert!(sig_tick.is_significant_volume());
 
-        let insig_tick= MarketTick::new(String::from("AMZN"), Decimal::new(1000, 2), 999);
+        let insig_tick = MarketTick::new(String::from("AMZN"), Decimal::new(1000, 2), 999);
         assert!(!insig_tick.is_significant_volume());
     }
 
