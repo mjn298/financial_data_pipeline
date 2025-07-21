@@ -4,6 +4,7 @@
 use financial_data_pipeline::processor::{MarketDataProducer, MarketDataHub};
 use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
+use financial_data_pipeline::MarketTick;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -11,7 +12,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // TODO: Create the market data channel that will feed the hub
     // This channel carries MarketTick messages from producers to the hub
-    
+    let (tx, rx) = mpsc::channel::<MarketTick>(1000);
+
+
     // TODO: Create the MarketDataHub instance
     // The constructor should return (hub, command_sender)
     // The command_sender is what clients use to interact with the hub

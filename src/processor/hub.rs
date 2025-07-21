@@ -47,12 +47,27 @@ pub struct MarketDataHub {
 
 impl MarketDataHub {
     /// Create a new MarketDataHub
-    /// Returns the hub and a command sender for clients to use
-    pub fn new(data_rx: mpsc::Receiver<MarketTick>) -> (Self, mpsc::Sender<MarketCommand>) {
-        // TODO: Create command channel with appropriate buffer size
-        // TODO: Create broadcast channel for shutdown coordination
-        // TODO: Initialize all fields and return hub + command sender
-        todo!()
+    pub fn new(data_rx: mpsc::Receiver<MarketTick>) -> Self {
+        // Create command channel with buffer size of 100
+        let (command_tx, command_rx) = mpsc::channel(100);
+        
+        // Create broadcast channel for shutdown coordination
+        let (shutdown_tx, shutdown_rx) = broadcast::channel(10);
+        
+        Self {
+            command_tx,
+            command_rx,
+            subscribers: HashMap::new(),
+            shutdown_tx,
+            shutdown_rx,
+            aggregator: PriceAggregator::new(),
+            data_rx,
+        }
+    }
+    
+    /// Get a command sender for sending commands to this hub
+    pub fn get_command_sender(&self) -> mpsc::Sender<MarketCommand> {
+        self.command_tx.clone()
     }
     
     /// Main event loop - processes market data and commands concurrently
