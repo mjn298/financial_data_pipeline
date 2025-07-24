@@ -1,7 +1,7 @@
 // this is where the async functions will go
 
 use chrono::{DateTime, Utc};
-use rand::{Rng, random_range};
+use rand::random_range;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
@@ -31,15 +31,14 @@ impl MarketTick {
 use tokio::time::{Duration, sleep};
 
 pub async fn fetch_market_data(symbol: &str) -> Result<MarketTick, String> {
-    let mut rng = rand::rng();
     // TODO: Simulate network delay with sleep(Duration::from_millis(100))
     // TODO: Return a MarketTick with random price and volume
     // TODO: Return Err for symbol "INVALID"
-    let _ = sleep(Duration::from_millis(100));
+    sleep(Duration::from_millis(100)).await;
     if symbol == "INVALID" {
         return Err(format!("Invalid symbol {symbol}"));
     }
-    let cents = rng.random_range(100u64..10000u64);
+    let cents = random_range(100u64..10000u64);
     let price = Decimal::new(cents as i64, 2);
     Ok(MarketTick::new(
         symbol.to_string(),

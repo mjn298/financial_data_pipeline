@@ -22,7 +22,7 @@ impl PriceAggregator {
 
     pub fn add_tick(&mut self, tick: MarketTick) {
         let mut sum = 0.0;
-        for i in 0..50000 {
+        for i in 0..100 {
             sum += (tick.price.to_f64().unwrap() * i as f64).sin()
         }
         self.symbol_prices
@@ -78,6 +78,7 @@ impl PriceAggregator {
     }
 }
 
+#[derive(Debug)]
 pub struct PriceStats {
     pub symbol: String,
     pub count: usize,

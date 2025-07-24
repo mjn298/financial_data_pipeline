@@ -1,33 +1,40 @@
 // Example demonstrating Exercise 2.3: Advanced Channel Patterns
 // This shows how to use the MarketDataHub with dynamic subscriptions
 
-use financial_data_pipeline::processor::{MarketDataProducer, MarketDataHub};
-use tokio::sync::mpsc;
-use tokio::time::{sleep, Duration};
 use financial_data_pipeline::MarketTick;
+use financial_data_pipeline::processor::{
+    MarketCommand, MarketDataHub, MarketDataProducer, PriceStats,
+};
+use tokio::sync::{mpsc, oneshot};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Hub Example - Exercise 2.3");
-    
-    // TODO: Create the market data channel that will feed the hub
+
     // This channel carries MarketTick messages from producers to the hub
     let (tx, rx) = mpsc::channel::<MarketTick>(1000);
 
-
-    // TODO: Create the MarketDataHub instance
     // The constructor should return (hub, command_sender)
     // The command_sender is what clients use to interact with the hub
-    
-    // TODO: Spawn the hub in a background task
+    let mut hub = MarketDataHub::new(rx);
+    let command_sender = hub.get_command_sender();
+
     // The hub.start() method runs the main event loop
     // This task will handle all market data distribution and commands
-    
-    // TODO: Create multiple producers for different symbols
+    let hub_task = tokio::spawn(async move { hub.start().await });
+
     // Each producer should send MarketTick messages to data_tx
     // Spawn each producer in its own task for concurrent data generation
-    
-    // TODO: Create a client task that demonstrates dynamic subscription patterns
+    let symbols = vec!["VZW", "JNJ", "AMZN", "AAPL", "SONO"];
+    for symbol in symbols {
+        let producer_tx = tx.clone();
+        let symbol = symbol.to_string();
+
+        tokio::spawn(async move {
+            let producer = MarketDataProducer::new(producer_tx, symbol);
+            producer.start_producing().await.unwrap();
+        });
+    }
     // The client should:
     //   1. Subscribe to one symbol and receive some ticks
     //   2. Subscribe to additional symbols
@@ -36,13 +43,77 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //   5. Unsubscribe from a symbol
     //   6. Verify no more data comes from unsubscribed symbol
     //   7. Initiate graceful shutdown
-    
-    // TODO: Wait for the client task to complete
-    
-    // TODO: Wait for the hub task to shutdown cleanly
-    
+    let client_command_sender = command_sender.clone();
+
+    let client_task = tokio::spawn(async move {
+        let (tx, rx) = oneshot::channel::<mpsc::Receiver<MarketTick>>();
+        client_command_sender
+            .send(MarketCommand::Subscribe("VZW".to_string(), tx))
+            .await
+            .expect("Failed to send subscribe command");
+        let mut vzw_receiver = rx.await.expect("Failed to get receiver for VZW");
+        for i in 0..5 {
+            if let Some(tick) = vzw_receiver.recv().await {
+                println!("Received tick {i}: {tick:?}")
+            }
+        }
+
+        let (jnj_tx, jnj_rx) = oneshot::channel::<mpsc::Receiver<MarketTick>>();
+        client_command_sender
+            .send(MarketCommand::Subscribe("JNJ".to_string(), jnj_tx))
+            .await
+            .expect("Failed to send subscribe command");
+
+        let mut jnj_receiver = jnj_rx.await.expect("Failed to get receiver for JNJ");
+
+        for i in 0..1000 {
+            tokio::select! {
+                Some(tick) = jnj_receiver.recv() => {
+                    println!("JNJ tick {i}: {tick:?}");
+                },
+                Some(tick) = vzw_receiver.recv() => {
+                    println!("VZW tick {i}: {tick:?}");
+                }
+            }
+        }
+
+        let (oneshot_sender, oneshot_receiver) = oneshot::channel::<Vec<PriceStats>>();
+        client_command_sender
+            .send(MarketCommand::GetStats(oneshot_sender))
+            .await
+            .expect("Failed to send GetStats command");
+        let stats = oneshot_receiver.await.expect("Failed to get stats");
+        println!("Statistics: {stats:?}");
+
+        client_command_sender
+            .send(MarketCommand::Unsubscribe("VZW".to_string()))
+            .await
+            .expect("Failed to unsubscribe");
+
+        for _ in 0..10 {
+            tokio::select! {
+                Some(tick) = vzw_receiver.recv() => {
+                    println!("ERROR: Still receiving VZW after unsubscribe: {tick:?}");
+                }
+                Some(tick) = jnj_receiver.recv() => {
+                    println!("JNJ tick (ok): {tick:?}");
+                }
+                else => {
+                    println!("No data received")
+                }
+            }
+        }
+
+        client_command_sender
+            .send(MarketCommand::Shutdown)
+            .await
+            .expect("Failed to shutdown");
+    });
+    client_task.await?;
+    hub_task.await?.expect("Failed to shutdown hub!");
+
     println!("Hub Example completed successfully!");
-    
+
     Ok(())
 }
 
