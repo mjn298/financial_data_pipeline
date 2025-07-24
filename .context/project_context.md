@@ -18,11 +18,11 @@ A distributed financial data system with these components:
 ## Learning Objectives
 
 ### Core Rust Concepts
-- [ ] Basic syntax, structs, ownership, borrowing
-- [ ] Parallelism and concurrency patterns
-- [ ] Async/await and Tokio runtime
-- [ ] Error handling with Result<T, E>
-- [ ] Memory safety without garbage collection
+- [x] Basic syntax, structs, ownership, borrowing
+- [x] Parallelism and concurrency patterns
+- [x] Async/await and Tokio runtime
+- [x] Error handling with Result<T, E>
+- [x] Memory safety without garbage collection
 
 ### Distributed Systems Concepts  
 - [ ] Message queues (Kafka) for event streaming
@@ -47,18 +47,20 @@ A distributed financial data system with these components:
 
 ## Tutorial Structure
 
-### Module 1: Rust Basics & Async Foundations ⬅️ **CURRENT**
-- **Status**: Setting up environment
+### Module 1: Rust Basics & Async Foundations ✅ **COMPLETED**
+- **Status**: Completed
 - **Focus**: Structs, methods, ownership, basic async/await
 - **Exercises**: MarketTick struct, async data fetching simulation
 - **Time**: 1-2 hours
 
-### Module 2: Concurrency with Channels  
+### Module 2: Concurrency with Channels ✅ **COMPLETED**
+- **Status**: All exercises completed (2.1, 2.2, 2.3)
 - **Focus**: mpsc channels, producer-consumer patterns, concurrent tasks
-- **Exercises**: Multiple market data producers, shared consumer
-- **Key Concepts**: Message passing, avoiding shared state
+- **Exercises**: Multiple market data producers, shared consumer, advanced hub
+- **Key Concepts**: Message passing, channels, actor pattern, tokio::select!
 
-### Module 3: Shared State & Real Parallelism
+### Module 3: Shared State & Real Parallelism ⬅️ **CURRENT**
+- **Status**: Ready to begin
 - **Focus**: Arc, Mutex, RwLock for thread-safe shared data
 - **Exercises**: Thread-safe price aggregation, read-heavy workloads
 - **Key Concepts**: When to share vs send, deadlock prevention
@@ -103,19 +105,27 @@ sqlx = "0.7"           # PostgreSQL async driver
 ### ✅ Completed
 - Project planning and learning path design
 - Development environment setup guide
-- Module 1 exercises and checklist created
-- Dependencies and project structure defined
+- **Module 1**: All exercises completed
+  - MarketTick struct with methods
+  - Async data fetching simulation
+  - Basic Tokio runtime usage
+- **Module 2**: All exercises completed
+  - Exercise 2.1: Basic producer-consumer with channels
+  - Exercise 2.2: Multiple consumers with shared aggregator
+  - Exercise 2.3: Advanced hub with command pattern, oneshot, and broadcast channels
+- Implemented financial data structures and concurrent processing patterns
 
 ### 🔄 In Progress  
-- **Module 1**: Working through Rust basics
-  - Exercise 1.1: MarketTick struct implementation
-  - Exercise 1.2: Async function with simulated market data fetch
+- **Module 3**: Starting shared state and parallelism patterns
+  - Will explore Arc, Mutex, RwLock
+  - Compare channels vs shared state approaches
+  - Focus on lock-free patterns for high-frequency data
 
 ### 📋 Next Steps
-1. Complete Module 1 exercises
-2. Verify understanding with self-check questions  
-3. Move to Module 2 (channels and concurrency)
-4. Build incrementally toward full pipeline
+1. Begin Module 3 exercises on shared state
+2. Implement thread-safe aggregators using Arc/Mutex  
+3. Explore RwLock for read-heavy workloads
+4. Compare performance between channels and shared state approaches
 
 ## Interview Preparation Context
 
@@ -128,6 +138,24 @@ sqlx = "0.7"           # PostgreSQL async driver
 - Covers real financial data processing challenges
 - Provides concrete examples for behavioral interview questions
 - Builds portfolio project showcasing technical growth
+
+## Key Learnings from Completed Modules
+
+### Module 1 Learnings
+- **Ownership**: Rust's move semantics prevent data races at compile time
+- **Async/Await**: Futures are lazy and need `.await` to execute
+- **Error Handling**: `Result<T, E>` and `?` operator make error propagation explicit
+- **Decimal Arithmetic**: Using `rust_decimal` for financial calculations instead of floats
+
+### Module 2 Learnings  
+- **Channel Patterns**: 
+  - `mpsc` for multi-producer single-consumer scenarios
+  - `oneshot` for request-response patterns
+  - `broadcast` for coordinating shutdown across components
+- **Actor Pattern**: MarketDataHub demonstrates single-threaded state ownership
+- **tokio::select!**: Essential macro for handling multiple async operations concurrently
+- **Backpressure**: Bounded channels naturally provide flow control
+- **Graceful Shutdown**: Proper coordination prevents data loss
 
 ## Development Notes
 
